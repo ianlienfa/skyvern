@@ -18,8 +18,8 @@ Reply in JSON format with the following keys:
   "information_extracted": optional[bool], // True if the needed information has been extracted. False if the needed information has not been extracted. If task history has no "extract" type, that means no data extraction has happened, return false. Null if the user goal does not require information extraction.
   "thoughts": str, // Think step by step. What has been done so far and what is the next reasonable mini goal a human can do foreseeably move towards the overall goal.
   "user_goal_achieved": bool, // True if the user goal has been completed, false otherwise. If the user wants to extract information and it has not been done, the user goal is not achieved.
-  "plan": str, // The mini goal to achieve to move towards the user goal. DO NOT come up or hallucinate any data that's not provided in the user goal. Be accurate and precise. Return null if the user goal has been achieved.
-  "task_type": str, // One of the available task types: navigate, extract, loop
+  "plan": str, // The mini goal to achieve to move towards the user goal. DO NOT come up or hallucinate any data that's not provided in the user goal. Be accurate and precise. Return null if the user goal has been achieved. When the task_type is 'goto_url', plan should just be the url attempting to visit
+  "task_type": str, // One of the available task types: navigate, extract, loop, goto_url
   "loop_values": list[str], // a list of string values to iterate through for loop task. null if it's not a loop task
   "is_loop_value_link": bool, // true if the loop_values is a list of urls to go to before for each planning session inside the loop
 }

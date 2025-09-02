@@ -200,7 +200,6 @@ async def initialize_task_v2(
         prompt_name="task_v2_generate_metadata",
     )
     # validate
-    LOG.info(f"Initialized task v2 initial response: {metadata_response}")
     url: str = user_url or metadata_response.get("url", "")
     if not url:
         raise UrlGenerationFailure()
@@ -654,15 +653,16 @@ async def run_task_v2_helper(
             user_goal_achieved = task_v2_response.get("user_goal_achieved", False)
             observation = task_v2_response.get("page_info", "")
             thoughts: str = task_v2_response.get("thoughts", "")
-            plan = task_v2_response.get("plan", "")
-            task_type = task_v2_response.get("task_type", "")
+            plan = task_v2_response.get("plan", "")   
+            plan_str = json.dumps(plan) if type(plan) is dict else plan
+            task_type = task_v2_response.get("task_type", "")            
             # Create and save task thought
             await app.DATABASE.update_thought(
                 thought_id=thought.observer_thought_id,
                 organization_id=organization_id,
                 thought=thoughts,
                 observation=observation,
-                answer=plan,
+                answer=plan_str,
                 output={"task_type": task_type, "user_goal_achieved": user_goal_achieved},
             )
 
@@ -682,7 +682,7 @@ async def run_task_v2_helper(
 
             if not plan:
                 LOG.warning("No plan found in task v2 response", task_v2_response=task_v2_response)
-                continue
+                break
 
             # parse task v2 response and run the next task
             if not task_type:
@@ -706,6 +706,13 @@ async def run_task_v2_helper(
                     task_history=task_history,
                 )
                 task_history_record = {"type": task_type, "task": plan}
+            # Add for CVE database build
+            elif task_type == "goto_url":
+                task_history_record = {"type": task_type, "task": plan}
+                block, block_yaml_list, parameter_yaml_list = await _generate_goto_url_task(
+                    workflow_id=workflow_id,
+                    url=plan,
+                )
             elif task_type == "navigate":
                 original_url = url if i == 0 else None
                 navigation_goal = MINI_GOAL_TEMPLATE.format(main_goal=user_prompt, mini_goal=plan)

@@ -53,6 +53,7 @@ class Skyvern(AsyncSkyvern):
             follow_redirects=follow_redirects,
             httpx_client=httpx_client,
         )
+        print("My skyvern called")
         if base_url is None and api_key is None:
             if not os.path.exists(".env"):
                 raise Exception("No .env file found. Please run 'skyvern init' first to set up your environment.")
@@ -365,6 +366,7 @@ class Skyvern(AsyncSkyvern):
                 return from_run_to_task_run_response(run_obj)
 
             elif engine == RunEngine.skyvern_v2:
+                print("run_task 4")
                 # initialize task v2
                 organization = await self.get_organization()
 
@@ -390,7 +392,6 @@ class Skyvern(AsyncSkyvern):
                 return from_run_to_task_run_response(run_obj)
             else:
                 raise ValueError("Local mode is not supported for this method")
-
         task_run = await super().run_task(
             prompt=prompt,
             engine=engine,

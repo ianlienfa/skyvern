@@ -33,8 +33,8 @@ services:
       - ./log:/data/log
       - ./.streamlit:/app/.streamlit
       # Uncomment the following two lines if you want to connect to any local changes
-      # - ./skyvern:/app/skyvern
-      # - ./alembic:/app/alembic
+      - ./skyvern:/app/skyvern
+      - ./alembic:/app/alembic
     environment:
       - DATABASE_STRING=postgresql+psycopg://skyvern:skyvern@postgres:5432/skyvern
       - BROWSER_TYPE=chromium-headful
@@ -158,3 +158,29 @@ services:
     depends_on:
       skyvern:
         condition: service_healthy
+  postgres-cve:
+    build: ..
+    # image: vuln-db-full
+    container_name: vulndb
+    ports:
+      - "5431:5432"
+      - "3000:3000" # restful api endpoint
+    environment:
+      POSTGRES_USER: vulndb
+      POSTGRES_PASSWORD: vulndb_pwd
+      POSTGRES_DB: vulndb
+    volumes:
+      - ../pgdata:/var/lib/postgresql/data
+      - ../data.csv:/app/data.csv
+      - ../advisories.csv:/app/advisories.csv
+      - ../init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ../postgrest.conf:/app/postgrest.conf
+    command: >
+            sh -c "docker-entrypoint.sh postgres & 
+             until pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}; do sleep 1; done &&
+             /app/postgrest /app/postgrest.conf"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10

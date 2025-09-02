@@ -35,4 +35,5 @@ DISPLAY=:99 xterm 2>/dev/null &
 python run_streaming.py > /dev/null &
 
 # Run the command and pass in all three arguments
-python -m skyvern.forge
+pip install py-spy
+python -m skyvern.forgeen

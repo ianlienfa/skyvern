@@ -347,11 +347,14 @@ def _action_to_stmt(act: dict[str, Any], assign_to_output: bool = False) -> cst.
 
 
 def _build_block_fn(block: dict[str, Any], actions: list[dict[str, Any]]) -> FunctionDef:
+    print("[Generate sciript] Current block: ", block)
+    LOG.debug("Generate sciript block", block)
     name = block.get("label") or _safe_name(block.get("title") or f"block_{block.get('workflow_run_block_id')}")
     body_stmts: list[cst.BaseStatement] = []
     is_extraction_block = block.get("block_type") == "extraction"
 
     if block.get("url"):
+        LOG.info("Got URL", block['url'])
         body_stmts.append(cst.parse_statement(f"await page.goto({repr(block['url'])})"))
 
     for act in actions:
