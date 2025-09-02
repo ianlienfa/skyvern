@@ -294,13 +294,25 @@ def _action_to_stmt(act: dict[str, Any], assign_to_output: bool = False) -> cst.
         args.append(
             cst.Arg(
                 keyword=cst.Name("prompt"),
-                value=_value(act["data_extraction_goal"]),
+                value=_render_value(act["data_extraction_goal"]),
                 whitespace_after_arg=cst.ParenthesizedWhitespace(
                     indent=True,
                     last_line=cst.SimpleWhitespace(INDENT),
                 ),
             )
         )
+        if act.get("data_extraction_schema"):
+            args.append(
+                cst.Arg(
+                    keyword=cst.Name("schema"),
+                    value=_value(act["data_extraction_schema"]),
+                    whitespace_after_arg=cst.ParenthesizedWhitespace(
+                        indent=True,
+                        last_line=cst.SimpleWhitespace(INDENT),
+                    ),
+                    comma=cst.Comma(),
+                )
+            )
 
     args.extend(
         [
@@ -563,6 +575,14 @@ def _build_extract_statement(block_title: str, block: dict[str, Any]) -> cst.Sim
         cst.Arg(
             keyword=cst.Name("prompt"),
             value=_render_value(block.get("data_extraction_goal", "")),
+            whitespace_after_arg=cst.ParenthesizedWhitespace(
+                indent=True,
+                last_line=cst.SimpleWhitespace(INDENT),
+            ),
+        ),
+        cst.Arg(
+            keyword=cst.Name("schema"),
+            value=_value(block.get("data_schema", "")),
             whitespace_after_arg=cst.ParenthesizedWhitespace(
                 indent=True,
                 last_line=cst.SimpleWhitespace(INDENT),
@@ -1190,7 +1210,7 @@ async def generate_workflow_script(
 
 
 async def create_script_block(
-    block_code: str,
+    block_code: str | bytes,
     script_revision_id: str,
     script_id: str,
     organization_id: str,
@@ -1208,6 +1228,7 @@ async def create_script_block(
         block_name: Optional custom name for the block (defaults to function name)
         block_description: Optional description for the block
     """
+    block_code_bytes = block_code if isinstance(block_code, bytes) else block_code.encode("utf-8")
     try:
         # Step 3: Create script block in database
         script_block = await app.DATABASE.create_script_block(
@@ -1228,7 +1249,7 @@ async def create_script_block(
             script_id=script_id,
             script_version=1,  # Assuming version 1 for now
             file_path=file_path,
-            data=block_code.encode("utf-8"),
+            data=block_code_bytes,
         )
 
         # Create script file record
@@ -1239,8 +1260,8 @@ async def create_script_block(
             file_path=file_path,
             file_name=file_name,
             file_type="file",
-            content_hash=f"sha256:{hashlib.sha256(block_code.encode('utf-8')).hexdigest()}",
-            file_size=len(block_code.encode("utf-8")),
+            content_hash=f"sha256:{hashlib.sha256(block_code_bytes).hexdigest()}",
+            file_size=len(block_code_bytes),
             mime_type="text/x-python",
             artifact_id=artifact_id,
         )
